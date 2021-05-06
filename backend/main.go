@@ -49,6 +49,16 @@ func HashPassword(password string) (string, error) {
 }
 
 
+func comparePasswords(hashedPwd string, plainPwd []byte) bool {
+    byteHash := []byte(hashedPwd)
+    err := bcrypt.CompareHashAndPassword(byteHash, plainPwd)
+    if err != nil {
+        log.Println(err)
+        return false
+    }
+    return true
+}
+
 func ConnectMongoClient() (*mongo.Client,error){
 	mongoOnce.Do(func() {
 		clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
@@ -109,6 +119,17 @@ func login(res http.ResponseWriter, req *http.Request){
 		json.NewEncoder(res).Encode(errors)
 		return
 	}
+
+	pwdMatch := comparePasswords(checkuser[0].Password, []byte(user.Password))
+
+	fmt.Print(pwdMatch)
+	if !pwdMatch{
+		errors.Error = "error"
+		errors.Result = "wrong password"
+		json.NewEncoder(res).Encode(errors)
+		return
+	}
+	
 
 	mySigningKey := []byte("darunsant")
 	expirationTime := time.Now().Add(5 * time.Minute)
