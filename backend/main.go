@@ -27,6 +27,12 @@ type Authentication struct{
 	UpdatedAt   time.Time          		`bson:"updated_at"`
 
 }
+
+type ResponseResult struct{
+	Error 		string 				`bson:"error"`
+	Result		string				`bson:"result"`
+}
+
 var clientInstance *mongo.Client
 var clientInstanceError error
 var mongoOnce sync.Once
@@ -60,28 +66,43 @@ func ConnectMongoClient() (*mongo.Client,error){
 	return clientInstance,clientInstanceError
 }
 
+func findUser(name string) ([]Authentication){
+	client, _ := ConnectMongoClient()
+	c := client.Database("GolangLogin").Collection("auth")
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+	result, err := c.Find(ctx, bson.M{"username":name})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var episodes []Authentication
+	if err = result.All(ctx, &episodes); err != nil {
+		log.Fatal(err)
+	}
+
+	return episodes
+
+}
+
 func login(res http.ResponseWriter, req *http.Request){
 	res.Header().Set("content-type", "application/json")
 	var user Authentication
 	_ = json.NewDecoder(req.Body).Decode(&user)
 
-	client, _ := ConnectMongoClient()
-	c := client.Database("GolangLogin").Collection("auth")
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	// client, _ := ConnectMongoClient()
+	// c := client.Database("GolangLogin").Collection("auth")
+	// ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	checkuser := findUser(user.Username)
+	fmt.Print("checkuser",checkuser)
 
-	result, err := c.Find(ctx, bson.M{"username":"mint"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	var episodes []bson.M
-	if err = result.All(ctx, &episodes); err != nil {
-		log.Fatal(err)
-	}
-	json.NewEncoder(res).Encode(episodes)
+
+	// if checkuser 
 }
 func addUser(res http.ResponseWriter, req *http.Request){
 	res.Header().Set("content-type", "application/json")
 	var user Authentication
+	var errors ResponseResult
 	_ = json.NewDecoder(req.Body).Decode(&user)
 
 	client, _ := ConnectMongoClient()
@@ -90,6 +111,15 @@ func addUser(res http.ResponseWriter, req *http.Request){
 
 	hash, _ := HashPassword(user.Password) 
 
+	checkuser := findUser(user.Username)
+	fmt.Print("checkuser",checkuser)
+
+	if len(checkuser) > 0{
+		errors.Error = "error"
+		errors.Result = "same username"
+		json.NewEncoder(res).Encode(errors)
+		return
+	}
 	user.Password = hash
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
