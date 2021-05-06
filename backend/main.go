@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -31,6 +32,11 @@ type Authentication struct{
 type ResponseResult struct{
 	Error 		string 				`bson:"error"`
 	Result		string				`bson:"result"`
+}
+
+type Claims struct {
+	Email 		string 				`bson:"email"`
+	jwt.StandardClaims
 }
 
 var clientInstance *mongo.Client
@@ -71,7 +77,7 @@ func findUser(email string) ([]Authentication){
 	c := client.Database("GolangLogin").Collection("auth")
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 
-	result, err := c.Find(ctx, bson.M{"username":email})
+	result, err := c.Find(ctx, bson.M{"email":email})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -88,17 +94,44 @@ func findUser(email string) ([]Authentication){
 func login(res http.ResponseWriter, req *http.Request){
 	res.Header().Set("content-type", "application/json")
 	var user Authentication
+	var errors ResponseResult
+
 	_ = json.NewDecoder(req.Body).Decode(&user)
 
 	// client, _ := ConnectMongoClient()
 	// c := client.Database("GolangLogin").Collection("auth")
 	// ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	checkuser := findUser(user.Email)
-	fmt.Print("checkuser",checkuser)
 
+	if len(checkuser) == 0{
+		errors.Error = "error"
+		errors.Result = "No User"
+		json.NewEncoder(res).Encode(errors)
+		return
+	}
 
-	// if checkuser 
+	mySigningKey := []byte("darunsant")
+	expirationTime := time.Now().Add(5 * time.Minute)
+
+	claims := &Claims{
+		Email: user.Email,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	// Create the Claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	ss, _ := token.SignedString(mySigningKey)
+
+	tokens := map[string]string{
+		"access_token":  ss,
+	}
+
+	json.NewEncoder(res).Encode(tokens)
 }
+
+
 func addUser(res http.ResponseWriter, req *http.Request){
 	res.Header().Set("content-type", "application/json")
 	var user Authentication
@@ -112,7 +145,6 @@ func addUser(res http.ResponseWriter, req *http.Request){
 	hash, _ := HashPassword(user.Password) 
 
 	checkuser := findUser(user.Email)
-	fmt.Print("checkuser",checkuser)
 
 	if len(checkuser) > 0{
 		errors.Error = "error"
