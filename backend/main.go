@@ -66,12 +66,12 @@ func ConnectMongoClient() (*mongo.Client,error){
 	return clientInstance,clientInstanceError
 }
 
-func findUser(name string) ([]Authentication){
+func findUser(email string) ([]Authentication){
 	client, _ := ConnectMongoClient()
 	c := client.Database("GolangLogin").Collection("auth")
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 
-	result, err := c.Find(ctx, bson.M{"username":name})
+	result, err := c.Find(ctx, bson.M{"username":email})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func login(res http.ResponseWriter, req *http.Request){
 	// client, _ := ConnectMongoClient()
 	// c := client.Database("GolangLogin").Collection("auth")
 	// ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	checkuser := findUser(user.Username)
+	checkuser := findUser(user.Email)
 	fmt.Print("checkuser",checkuser)
 
 
@@ -111,12 +111,12 @@ func addUser(res http.ResponseWriter, req *http.Request){
 
 	hash, _ := HashPassword(user.Password) 
 
-	checkuser := findUser(user.Username)
+	checkuser := findUser(user.Email)
 	fmt.Print("checkuser",checkuser)
 
 	if len(checkuser) > 0{
 		errors.Error = "error"
-		errors.Result = "same username"
+		errors.Result = "same email"
 		json.NewEncoder(res).Encode(errors)
 		return
 	}
