@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,16 +20,19 @@ import (
 )
 
 // var client *mongo.Client
-type Authentication struct{
+type CreateUser struct{
 	ID        	primitive.ObjectID 		`bson:"_id,omitempty"`
-	Username 	string					`bson:"username,omitempty"`
-	Email		string					`bson:"email,omitempty"`
-	Password 	string					`bson:"password,omitempty"`
+	Username 	string					`bson:"username,omitempty" validate:"required,min=3,max=15"`
+	Email		string					`bson:"email,omitempty" validate:"required,email"`
+	Password 	string					`bson:"password,omitempty" validate:"required"`
 	CreatedAt   time.Time          		`bson:"created_at"`
 	UpdatedAt   time.Time          		`bson:"updated_at"`
-
 }
 
+type LoginUser struct{
+	Email		string					`bson:"email,omitempty" validate:"required,email"`
+	Password 	string					`bson:"password,omitempty" validate:"required"`
+}
 type ResponseResult struct{
 	Error 		string 				`bson:"error"`
 	Result		string				`bson:"result"`
@@ -42,6 +46,7 @@ type Claims struct {
 var clientInstance *mongo.Client
 var clientInstanceError error
 var mongoOnce sync.Once
+var validate *validator.Validate
 
 func HashPassword(password string) (string, error) {
     bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -82,7 +87,7 @@ func ConnectMongoClient() (*mongo.Client,error){
 	return clientInstance,clientInstanceError
 }
 
-func findUser(email string) ([]Authentication){
+func findUser(email string) ([]CreateUser){
 	client, _ := ConnectMongoClient()
 	c := client.Database("GolangLogin").Collection("auth")
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
@@ -92,7 +97,7 @@ func findUser(email string) ([]Authentication){
 		log.Fatal(err)
 	}
 
-	var episodes []Authentication
+	var episodes []CreateUser
 	if err = result.All(ctx, &episodes); err != nil {
 		log.Fatal(err)
 	}
@@ -102,15 +107,14 @@ func findUser(email string) ([]Authentication){
 }
 
 func login(res http.ResponseWriter, req *http.Request){
+	validate = validator.New()
+
 	res.Header().Set("content-type", "application/json")
-	var user Authentication
+	var user LoginUser
 	var errors ResponseResult
 
 	_ = json.NewDecoder(req.Body).Decode(&user)
 
-	// client, _ := ConnectMongoClient()
-	// c := client.Database("GolangLogin").Collection("auth")
-	// ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	checkuser := findUser(user.Email)
 
 	if len(checkuser) == 0{
@@ -122,7 +126,6 @@ func login(res http.ResponseWriter, req *http.Request){
 
 	pwdMatch := comparePasswords(checkuser[0].Password, []byte(user.Password))
 
-	fmt.Print(pwdMatch)
 	if !pwdMatch{
 		errors.Error = "error"
 		errors.Result = "wrong password"
@@ -130,6 +133,20 @@ func login(res http.ResponseWriter, req *http.Request){
 		return
 	}
 	
+	err := validate.Struct(user)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			return
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+				errors.Error = err.StructField()
+				errors.Result = err.ActualTag()
+				json.NewEncoder(res).Encode(errors)
+				return
+		}
+	}
+
 
 	mySigningKey := []byte("darunsant")
 	expirationTime := time.Now().Add(5 * time.Minute)
@@ -141,7 +158,6 @@ func login(res http.ResponseWriter, req *http.Request){
 		},
 	}
 
-	// Create the Claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, _ := token.SignedString(mySigningKey)
 
@@ -154,14 +170,31 @@ func login(res http.ResponseWriter, req *http.Request){
 
 
 func addUser(res http.ResponseWriter, req *http.Request){
+
+	validate = validator.New()
+
 	res.Header().Set("content-type", "application/json")
-	var user Authentication
+	var user CreateUser
 	var errors ResponseResult
 	_ = json.NewDecoder(req.Body).Decode(&user)
 
 	client, _ := ConnectMongoClient()
 	c := client.Database("GolangLogin").Collection("auth")
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+	err := validate.Struct(user)
+	if err != nil {
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			return
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+				errors.Error = err.StructField()
+				errors.Result = err.ActualTag()
+				json.NewEncoder(res).Encode(errors)
+				return
+		}
+	}
 
 	hash, _ := HashPassword(user.Password) 
 
