@@ -4,7 +4,13 @@ import { useForm } from "react-hook-form";
 
 const Register = () => {
 	const { register, handleSubmit } = useForm();
-	const submitRegister = handleSubmit((data) => console.log(data));
+	const submitRegister = handleSubmit(async (data) => {
+		await fetch(`http://localhost:8080/api/register`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+		});
+	});
 	return (
 		<>
 			<h3>Register</h3>
