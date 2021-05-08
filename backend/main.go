@@ -11,6 +11,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -108,15 +109,15 @@ func findUser(email string) ([]CreateUser){
 
 func login(res http.ResponseWriter, req *http.Request){
 	validate = validator.New()
-
 	res.Header().Set("content-type", "application/json")
+
 	var user LoginUser
 	var errors ResponseResult
 
 	_ = json.NewDecoder(req.Body).Decode(&user)
 
 	checkuser := findUser(user.Email)
-
+	fmt.Print("user",user)
 	if len(checkuser) == 0{
 		errors.Error = "error"
 		errors.Result = "No User"
@@ -174,6 +175,7 @@ func addUser(res http.ResponseWriter, req *http.Request){
 	validate = validator.New()
 
 	res.Header().Set("content-type", "application/json")
+
 	var user CreateUser
 	var errors ResponseResult
 	_ = json.NewDecoder(req.Body).Decode(&user)
@@ -217,8 +219,13 @@ func addUser(res http.ResponseWriter, req *http.Request){
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/register",addUser).Methods("POST")
-	router.HandleFunc("/login",login).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8080",router))
+	router.HandleFunc("/api/register",addUser).Methods("POST")
+	router.HandleFunc("/api/login",login).Methods("POST")
+
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"})
+	origins := handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:5000"})
+
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins)(router)))
 }
 
