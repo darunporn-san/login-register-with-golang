@@ -20,9 +20,13 @@ const FormRegister: React.FC<IFormRegister> = (props) => {
 						})}
 						{...props.register("username")}
 					/>
-					    {props.error.username && <p style={{ display: 'block' }} className="invalid-feedback">{props.error.username.message}</p>}
+					{props.error.username && (
+						<p style={{ display: "block" }} className="invalid-feedback">
+							{props.error.username.message}
+						</p>
+					)}
 				</div>
-				<div>
+				<div className ="mt-3">
 					<label>Email</label>
 					<input
 						type="email"
@@ -31,10 +35,13 @@ const FormRegister: React.FC<IFormRegister> = (props) => {
 						})}
 						{...props.register("email")}
 					/>
-					{props.error.email && <p style={{ display: 'block' }} className="invalid-feedback">{props.error.email.message}</p>}
-
+					{props.error.email && (
+						<p style={{ display: "block" }} className="invalid-feedback">
+							{props.error.email.message}
+						</p>
+					)}
 				</div>
-				<div>
+				<div className ="mt-3">
 					<label>Password</label>
 					<input
 						type="password"
@@ -43,10 +50,13 @@ const FormRegister: React.FC<IFormRegister> = (props) => {
 						})}
 						{...props.register("password")}
 					/>
-					{props.error.password && <p style={{ display: 'block' }} className="invalid-feedback">{props.error.password.message}</p>}
-
+					{props.error.password && (
+						<p style={{ display: "block" }} className="invalid-feedback">
+							{props.error.password.message}
+						</p>
+					)}
 				</div>
-				<div>
+				<div className ="mt-3">
 					<label>Confirm Password</label>
 					<input
 						type="password"
@@ -55,10 +65,17 @@ const FormRegister: React.FC<IFormRegister> = (props) => {
 						})}
 						{...props.register("confirmPassword")}
 					/>
-					{props.error.confirmPassword && <p style={{ display: 'block' }} className="invalid-feedback">{props.error.confirmPassword.message}</p>}
-
+					{props.error.confirmPassword && (
+						<p style={{ display: "block" }} className="invalid-feedback">
+							{props.error.confirmPassword.message}
+						</p>
+					)}
 				</div>
-				<input type="submit" />
+				<div className="text-center">
+					<button type="submit" className="btn btn-primary mt-3 text-end">
+						Register
+					</button>
+				</div>
 			</form>
 		</>
 	);

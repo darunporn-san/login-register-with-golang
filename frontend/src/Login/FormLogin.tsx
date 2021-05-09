@@ -20,10 +20,13 @@ const FormLogin: React.FC<IFormLogin> = (props) => {
 						})}
 						{...props.register("email")}
 					/>
-					{props.error.email && <p style={{ display: 'block' }} className="invalid-feedback">{props.error.email.message}</p>}
-
+					{props.error.email && (
+						<p style={{ display: "block" }} className="invalid-feedback">
+							{props.error.email.message}
+						</p>
+					)}
 				</div>
-				<div>
+				<div className ="mt-3">
 					<label>Password</label>
 					<input
 						type="password"
@@ -38,7 +41,12 @@ const FormLogin: React.FC<IFormLogin> = (props) => {
 						</p>
 					)}
 				</div>
-				<input type="submit" />
+				<div className="text-center">
+					<button type="submit" className="btn btn-primary mt-3 text-end">
+						Login
+					</button>
+				</div>
+				
 			</form>
 		</>
 	);

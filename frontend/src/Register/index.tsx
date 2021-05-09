@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import FormRegister from "./FromRegister";
 import { useForm } from "react-hook-form";
 import { RegisterSchema } from "../Validate/Register";
@@ -14,23 +14,40 @@ const Register = () => {
 		resolver: yupResolver(RegisterSchema),
 		mode: "onChange",
 	});
-	console.log(errors);
-	
+	const [cRegister,setCRegister] = useState('')	
 	const submitRegister = handleSubmit(async (data) => {
-		await fetch(`http://localhost:8080/api/register`, {
+		const response = await fetch(`http://localhost:8080/api/register`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 		});
+		const userLogin = await response.json()
+		if(userLogin.InsertedID){
+			setCRegister('Completed Register Success')
+		}else if(userLogin.Error === "error"){
+			setCRegister('Email duplicated')
+		}
 	});
 	return (
 		<>
-			<h3>Register</h3>
-			<FormRegister
-				register={register}
-				error={errors}
-				handleSubmit={submitRegister}
-			/>
+			<div className="row h-100">
+				<div className="col m-auto">{cRegister}</div>
+				<div className="formLR col">
+					<div className="designFromRegister">	
+						<h3 className="text-center">Register</h3>
+						<FormRegister
+							register={register}
+							error={errors}
+							handleSubmit={submitRegister}
+						/>
+						<hr   />
+						<div className="text-end"><a href="/login">Login</a></div>
+					</div>
+				</div>
+
+			</div>
+			
+			
 		</>
 	);
 };

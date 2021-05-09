@@ -16,8 +16,44 @@ code {
 .loginLayout{
   width: 80vw;
   height: 70vh;
-  background-color: aquamarine;
+  background-color:#ff8264;
 }
 .invalid-feedback{
   font-size: 12px;
+}
+a{
+  text-decoration: none;
+}
+.formLR{
+  background-color: white;
+  font-size: 14px;
+  text-align: start;
+}
+
+.designFromLogin{
+  margin: auto;
+  width: 70%;
+  top:15vh;
+  position: relative;
+}
+
+.designFromRegister{
+  margin: auto;
+  width: 70%;
+  top:8vh;
+  position: relative;
+}
+
+.popupModal{
+  background-color: white;
+  width: 30vw;
+  border-radius: 10px;
+  margin: auto;
+  top: 35vh;
+  position: relative;
+  z-index: 3;
+}
+.modal{
+  background: rgba(0, 0, 0, 0.6);
+
 }
