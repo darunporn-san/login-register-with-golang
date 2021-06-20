@@ -2,14 +2,17 @@
 It is the first time to write backend code
 
 branch : develop
+      
+      Login : `/login`
+      Register : `/register`
 
-Frontend 
+Frontend :
 
 - cd frontend 
 - yarn 	
 - yarn start
 
-Backend
+Backend : 
 
 - go install
 - go run main.go
